@@ -102,7 +102,7 @@ def front_end(restaurant_dict, selection_tree):
     print()
     print("Price   : " + info["price"])
     url = info['image_url']
-    print(platform.system())
+    # print(platform.system())
     if platform.system() == "Windows":
         webbrowser.open(url)
     else:
