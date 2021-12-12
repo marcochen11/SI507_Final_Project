@@ -114,7 +114,7 @@ def time_to_restaurant(start_address, dest_address):
     start_address.replace(" ", "+")
     dest_address.replace(" ", "+")
     response = requests.get("https://maps.googleapis.com/maps/api/directions/json?origin=" + start_address + \
-        "&destination=" + dest_address + "&key=AIzaSyAop8k5FFJsrzpzkIxlxu23n4zV3iO4z90")
+        "&destination=" + dest_address + "&key=" + "key")
     data=json.loads(response.text)
     # print(data["routes"][0]["legs"][0]["duration"]["text"])
     # print(data["routes"][0]["legs"][0]["duration"]["value"])
@@ -137,7 +137,7 @@ def front_end(restaurant_dict, selection_tree):
         print(alias, end = " ")
     print()
     print("Price   : " + info["price"])
-    print("It will take you " + time_to_restaurant(address, info["address"]) + "' drive to the restaurant")
+    # print("It will take you " + time_to_restaurant(address, info["address"]) + "' drive to the restaurant")
     url = info['image_url']
     # Popping image based on user's operating system
     show_image = enquiries.choose('Do you want to see some picture of the restaurant: ', ["yes","no"])
