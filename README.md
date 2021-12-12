@@ -1,2 +1,4 @@
 # SI507_Final_Project
-pip3 install enquiries
+Prerequirement:
+1.  need to install enquiries module
+    pip3 install enquiries
