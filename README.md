@@ -31,8 +31,10 @@ three level data structure:
 used for construct selection tree and look up details of the restaurant after recommendations
 
 1.  city
-2.  restaurant
+2.  name of restaurant
 3.  infomation of restaurant
+
+for each restaurant, the data structure stores information like price level, category, address, image URL, website URL
 
 ### selection_tree
 
@@ -43,4 +45,4 @@ tree like structure to search restaurant that satisfies user's requirements
 1.  city
 2.  category
 3.  price level
-4.  name
+4.  name of restaurant
