@@ -1,12 +1,12 @@
 # SI507_Final_Project
 
-##Prerequirement:
+## Prerequirement:
 
 1.  need to install enquiries module
 
     `pip3 install enquiries`
 
-##Usage:
+## Usage:
 
 `python3 main.py use_local=[true/false]`
 
@@ -22,9 +22,9 @@ By setting use_local as false, you will fetch data from yelp fusion based on cit
 
 You can change the city list by editing the [new_city_list.txt] file
 
-##Data structure
+## Data structure
 
-###restaurant_info
+### restaurant_info
 
 three level data structure:
 
@@ -34,7 +34,7 @@ used for construct selection tree and look up details of the restaurant after re
 2.  restaurant
 3.  infomation of restaurant
 
-###selection_tree
+### selection_tree
 
 four level data structure:
 
