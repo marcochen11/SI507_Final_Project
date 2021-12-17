@@ -7,6 +7,7 @@ from io import BytesIO
 import webbrowser
 import platform
 import sys
+import processData
 
 # get city list (either from local or new city list)
 def get_cities(use_local):
@@ -49,85 +50,39 @@ def fetch_data_from_local_json():
     yelp_data = json.load(load_file)
     return yelp_data
 
-def process_restaurant_dict(yelp_data, city_list):
-    restaurant_dict = {}
-    price_level = set()
-    category_list = set()
-    for city in city_list:
-        restaurant_dict[city] = {}
-        for business in yelp_data[city]["businesses"]:
-            name = business["name"]
-            try:
-                price_level.add(business["price"])
-            except:
-                continue
-            categories = []
-            for category in business["categories"]:
-                alias = category["alias"]
-                categories.append(alias)
-                category_list.add(alias)
-            try:
-                address = business["location"]["address1"] + business["location"]["city"]
-            except:
-                address = business["location"]["address1"]
-            info = {"categories": categories, "price": business["price"], "image_url": business["image_url"], "url": business["url"], "address": address}
-            restaurant_dict[city][name] = info
-    return restaurant_dict
-
-def process_selection_tree(restaurant_dict, city_list):
-    selection_tree = {}
-    for city in city_list:
-        selection_tree[city] = {}
-        restaurant_per_city = restaurant_dict[city]
-        category_dict = {}
-        for restaurant in restaurant_per_city.keys():
-            info = restaurant_per_city[restaurant]
-            for category in info["categories"]:
-                if category in category_dict:
-                    category_dict[category][restaurant] = (restaurant_per_city[restaurant])
-                else:
-                    category_dict[category] = {restaurant: restaurant_per_city[restaurant]}
-        for category in category_dict.keys():
-            selection_tree[city][category] = {}
-            for restaurant in category_dict[category].keys():
-                info = category_dict[category][restaurant]
-                if info["price"] in selection_tree[city][category]:
-                    selection_tree[city][category][info["price"]].append(restaurant)
-                else:
-                    selection_tree[city][category][info["price"]] = [restaurant]
-    return selection_tree
-
 # Processing data in real time
 def process_data(yelp_data, city_list):
-    restaurant_dict = process_restaurant_dict(yelp_data, city_list)
-    selection_tree = process_selection_tree(restaurant_dict, city_list)
+    restaurant_info = processData.restaurantsInfo(city_list)
+    restaurant_info.put_info(yelp_data)
+    selection_tree = processData.selectionTree()
+    selection_tree.build_tree(restaurant_info)
     dump_file = open("./processed_data", 'w')
-    dump_file = json.dump(restaurant_dict, dump_file)
+    dump_file = json.dump(restaurant_info.return_info(), dump_file)
     dump_file = open("./processed_tree", 'w')
-    dump_file = json.dump(selection_tree, dump_file)
-    return restaurant_dict, selection_tree
+    dump_file = json.dump(selection_tree.return_tree(), dump_file)
+    return restaurant_info, selection_tree
 
 # Using google API to calculate time to restaurant
-def time_to_restaurant(start_address, dest_address):
+def time_to_restaurant(start_address, dest_address, key):
     if start_address == "":
         start_address = "University of Michigan"
     start_address.replace(" ", "+")
     dest_address.replace(" ", "+")
     response = requests.get("https://maps.googleapis.com/maps/api/directions/json?origin=" + start_address + \
-        "&destination=" + dest_address + "&key=" + "key")
+        "&destination=" + dest_address + "&key=" + key)
     data=json.loads(response.text)
-    # print(data["routes"][0]["legs"][0]["duration"]["text"])
-    # print(data["routes"][0]["legs"][0]["duration"]["value"])
     return data["routes"][0]["legs"][0]["duration"]["text"]
 
-def front_end(restaurant_dict, selection_tree):
+def front_end(restaurant_info, selection_tree, key):
     # Ask for user's preference
-    city = enquiries.choose('Choose one of these cities you are looking for restaurant in: ', list(selection_tree.keys()))
-    category = enquiries.choose('Choose category of your preferred type of restaurant: ', list(selection_tree[city].keys()))
-    price_level = enquiries.choose('Choose price level your restaurant: ', list(selection_tree[city][category].keys()))
-    restaurant = enquiries.choose('Choose your restaurant: ', selection_tree[city][category][price_level])
-    address = input("Enter your current address(if enter nothing, your default address will be university of michigan): ")
-    info = restaurant_dict[city][restaurant]
+    city = enquiries.choose('Choose one of these cities you are looking for restaurant in: ', selection_tree.get_city_list())
+    category = enquiries.choose('Choose category of your preferred type of restaurant: ', selection_tree.get_category_list(city))
+    price_level = enquiries.choose('Choose price level your restaurant: ', selection_tree.get_price_list(city, category))
+    restaurant = enquiries.choose('Choose your restaurant: ', selection_tree.get_final_recommend_list(city, category, price_level))
+    address = ""
+    if key != "":
+        address = input("Enter your current address(if enter nothing, your default address will be university of michigan): ")
+    info = restaurant_info.get_restaurant_info(city, restaurant)
     # Popping info based on users preference
     print("here's an overview of your restaurant: ")
     print("City    : " + city)
@@ -137,7 +92,8 @@ def front_end(restaurant_dict, selection_tree):
         print(alias, end = " ")
     print()
     print("Price   : " + info["price"])
-    # print("It will take you " + time_to_restaurant(address, info["address"]) + "' drive to the restaurant")
+    if key != "":
+        print("It will take you " + time_to_restaurant(address, info["address"], key) + "' drive to the restaurant")
     url = info['image_url']
     # Popping image based on user's operating system
     show_image = enquiries.choose('Do you want to see some picture of the restaurant: ', ["yes","no"])
@@ -156,22 +112,30 @@ def front_end(restaurant_dict, selection_tree):
     if again == "yes":
         print("Have a wonderful day!")
     else:
-        front_end(restaurant_dict, selection_tree)
+        front_end(restaurant_info, selection_tree, key)
 
-def main(use_local):
+def main(use_local, key):
     city_list = get_cities(use_local)
     yelp_data = {}
     if use_local=="true":
         yelp_data = fetch_data_from_local_json()
     else:
         yelp_data = fetch_data_from_yelp(city_list)
-    restaurant_dict, selection_tree = process_data(yelp_data, city_list)
-    front_end(restaurant_dict, selection_tree)
+    restaurant_info, selection_tree = process_data(yelp_data, city_list)
+    front_end(restaurant_info, selection_tree, key)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2 or sys.argv[1][0:10] != "use_local=" or (sys.argv[1][10:] != "true" and sys.argv[1][10:] != "false"):
-        print("Usage: python3 main.py use_local=[true/false]")
+    if len(sys.argv) == 2 or len(sys.argv) == 3:
+        if sys.argv[1][0:10] != "use_local=" or (sys.argv[1][10:] != "true" and sys.argv[1][10:] != "false"):
+            print("Usage: python3 main.py use_local=[true/false]")
+            print("Or   : python3 main.py use_local=[true/false] key=[key]")
+        else:
+            if len(sys.argv) == 2:
+                main(sys.argv[1][10:], "")
+            else:
+                main(sys.argv[1][10:], sys.argv[2][4:])
     else:
-        main(sys.argv[1][10:])
+        print("Usage: python3 main.py use_local=[true/false]")
+        print("Or   : python3 main.py use_local=[true/false] key=[key]")
 
 
