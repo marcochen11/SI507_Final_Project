@@ -40,13 +40,13 @@ def fetch_data_from_yelp(city_list):
         yelp_response = requests.get(url, params=params, headers=headers)
         current_city_data=json.loads(yelp_response.text)
         yelp_data[city] = current_city_data
-    dump_file = open("./new_raw_data", 'w')
+    dump_file = open("./new_raw_data.json", 'w')
     dump_file = json.dump(yelp_data, dump_file)
     return yelp_data
 
 # Fetching data from local json is using local
 def fetch_data_from_local_json():
-    load_file = open("./raw_data", 'r')
+    load_file = open("./raw_data.json", 'r')
     yelp_data = json.load(load_file)
     return yelp_data
 
@@ -56,9 +56,9 @@ def process_data(yelp_data, city_list):
     restaurant_info.put_info(yelp_data)
     selection_tree = processData.selectionTree()
     selection_tree.build_tree(restaurant_info)
-    dump_file = open("./processed_data", 'w')
+    dump_file = open("./restaurant_info.json", 'w')
     dump_file = json.dump(restaurant_info.return_info(), dump_file)
-    dump_file = open("./processed_tree", 'w')
+    dump_file = open("./selection_tree.json", 'w')
     dump_file = json.dump(selection_tree.return_tree(), dump_file)
     return restaurant_info, selection_tree
 
