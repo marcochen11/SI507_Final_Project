@@ -75,10 +75,10 @@ def time_to_restaurant(start_address, dest_address, key):
 
 def front_end(restaurant_info, selection_tree, key):
     # Ask for user's preference
-    city = enquiries.choose('Choose one of these cities you are looking for restaurant in: ', selection_tree.get_city_list())
-    category = enquiries.choose('Choose category of your preferred type of restaurant: ', selection_tree.get_category_list(city))
-    price_level = enquiries.choose('Choose price level your restaurant: ', selection_tree.get_price_list(city, category))
-    restaurant = enquiries.choose('Choose your restaurant: ', selection_tree.get_final_recommend_list(city, category, price_level))
+    city = enquiries.choose('Choose one of these cities you are looking for restaurant in: ', sorted(selection_tree.get_city_list()))
+    category = enquiries.choose('Choose category of your preferred type of restaurant: ', sorted(selection_tree.get_category_list(city)))
+    price_level = enquiries.choose('Choose price level your restaurant: ', sorted(selection_tree.get_price_list(city, category)))
+    restaurant = enquiries.choose('Choose your restaurant: ', sorted(selection_tree.get_final_recommend_list(city, category, price_level)))
     address = ""
     if key != "":
         address = input("Enter your current address(if enter nothing, your default address will be university of michigan): ")
