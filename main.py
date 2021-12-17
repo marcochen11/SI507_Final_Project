@@ -7,7 +7,7 @@ from io import BytesIO
 import webbrowser
 import platform
 import sys
-import processData
+import dataStruct
 
 # get city list (either from local or new city list)
 def get_cities(use_local):
@@ -45,16 +45,25 @@ def fetch_data_from_yelp(city_list):
     return yelp_data
 
 # Fetching data from local json is using local
-def fetch_data_from_local_json():
-    load_file = open("./raw_data.json", 'r')
-    yelp_data = json.load(load_file)
-    return yelp_data
+def fetch_data_from_local_json(city_list):
+    f = open("./restaurant_info.json", 'r')
+    info = json.load(f)
+    f.close()
+    f = open("./selection_tree.json", 'r')
+    tree = json.load(f)
+    f.close()
+    restaurant_info = dataStruct.restaurantsInfo(city_list)
+    selection_tree = dataStruct.selectionTree()
+    selection_tree.put_city_list(city_list)
+    restaurant_info.load_from_json(info)
+    selection_tree.load_from_json(tree)
+    return restaurant_info, selection_tree
 
 # Processing data in real time
 def process_data(yelp_data, city_list):
-    restaurant_info = processData.restaurantsInfo(city_list)
+    restaurant_info = dataStruct.restaurantsInfo(city_list)
     restaurant_info.put_info(yelp_data)
-    selection_tree = processData.selectionTree()
+    selection_tree = dataStruct.selectionTree()
     selection_tree.build_tree(restaurant_info)
     dump_file = open("./restaurant_info.json", 'w')
     dump_file = json.dump(restaurant_info.return_info(), dump_file)
@@ -117,11 +126,13 @@ def front_end(restaurant_info, selection_tree, key):
 def main(use_local, key):
     city_list = get_cities(use_local)
     yelp_data = {}
+    restaurant_info = dataStruct.restaurantsInfo(city_list)
+    selection_tree = dataStruct.selectionTree()
     if use_local=="true":
-        yelp_data = fetch_data_from_local_json()
+        restaurant_info, selection_tree = fetch_data_from_local_json(city_list)
     else:
         yelp_data = fetch_data_from_yelp(city_list)
-    restaurant_info, selection_tree = process_data(yelp_data, city_list)
+        restaurant_info, selection_tree = process_data(yelp_data, city_list)
     front_end(restaurant_info, selection_tree, key)
 
 if __name__ == "__main__":
